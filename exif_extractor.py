@@ -1,29 +1,28 @@
 #!/usr/bin/env python3
 import os
-import json
 from PIL import Image
 from PIL.ExifTags import TAGS, GPSTAGS
-from inquirer import prompt, List, Path
+from questionary import select, path
 
-# ASCII Banner
-BANNER = """
- _______      ___    ___ ___  ________                                                              ||
-|\  ___ \    |\  \  /  /|\  \|\  _____\                                                             ||
-\ \   __/|   \ \  \/  / | \  \ \  \__/                                                              ||
- \ \  \_|/__  \ \    / / \ \  \ \   __\                                                             ||
-  \ \  \_|\ \  /     \/   \ \  \ \  \_|                                                             ||
-   \ \_______\/  /\   \    \ \__\ \__\                                                              ||
-    \|_______/__/ /\ __\    \|__|\|__|                                                              ||
-             |__|/ \|__|                                                                            ||
-                                                                                                    ||
- _______      ___    ___ _________  ________  ________  ________ _________  ________  ________      ||
-|\  ___ \    |\  \  /  /|\___   ___\\   __  \|\   __  \|\   ____\\___   ___\\   __  \|\   __  \     ||
-\ \   __/|   \ \  \/  / ||___ \  \_\ \  \|\  \ \  \|\  \ \  \___\|___ \  \_\ \  \|\  \ \  \|\  \    ||
- \ \  \_|/__  \ \    / /     \ \  \ \ \   _  _\ \   __  \ \  \       \ \  \ \ \  \\\  \ \   _  _\   ||
-  \ \  \_|\ \  /     \/       \ \  \ \ \  \\  \\ \  \ \  \ \  \____   \ \  \ \ \  \\\  \ \  \\  \|  ||
-   \ \_______\/  /\   \        \ \__\ \ \__\\ _\\ \__\ \__\ \_______\  \ \__\ \ \_______\ \__\\ _\  ||
-    \|_______/__/ /\ __\        \|__|  \|__|\|__|\|__|\|__|\|_______|   \|__|  \|_______|\|__|\|__|  ||
-             |__|/ \|__|                                                                            ||
+# ASCII Banner (Fixed)
+BANNER = r"""
+ _______      ___    ___ ___  ________                                                              
+|\  ___ \    |\  \  /  /|\  \|\  _____\                                                             
+\ \   __/|   \ \  \/  / | \  \ \  \__/                                                              
+ \ \  \_|/__  \ \    / / \ \  \ \   __\                                                             
+  \ \  \_|\ \  /     \/   \ \  \ \  \_|                                                             
+   \ \_______\/  /\   \    \ \__\ \__\                                                              
+    \|_______/__/ /\ __\    \|__|\|__|                                                              
+             |__|/ \|__|                                                                            
+                                                                                                    
+ _______      ___    ___ _________  ________  ________  ________ _________  ________  ________      
+|\  ___ \    |\  \  /  /|\___   ___\\   __  \|\   __  \|\   ____\\___   ___\\   __  \|\   __  \     
+\ \   __/|   \ \  \/  / ||___ \  \_\ \  \|\  \ \  \|\  \ \  \___\|___ \  \_\ \  \|\  \ \  \|\  \    
+ \ \  \_|/__  \ \    / /     \ \  \ \ \   _  _\ \   __  \ \  \       \ \  \ \ \  \\\  \ \   _  _\   
+  \ \  \_|\ \  /     \/       \ \  \ \ \  \\  \\ \  \ \  \ \  \____   \ \  \ \ \  \\\  \ \  \\  \|  
+   \ \_______\/  /\   \        \ \__\ \ \__\\ _\\ \__\ \__\ \_______\  \ \__\ \ \_______\ \__\\ _\  
+    \|_______/__/ /\ __\        \|__|  \|__|\|__|\|__|\|__|\|_______|   \|__|  \|_______|\|__|\|__|  
+             |__|/ \|__|                                                                            
 """
 
 def get_exif_data(image_path):
@@ -90,24 +89,14 @@ def print_details(exif_data, gps_info, location):
 
 def main():
     print(BANNER)
-    questions = [
-        List(
-            "action",
-            message="What do you want to do?",
-            choices=["Find details of an image", "Exit"]
-        ),
-        Path(
-            "image_path",
-            message="Select an image file:",
-            path_type="file",
-            validate=lambda _, x: os.path.exists(x),
-            when=lambda x: x["action"] == "Find details of an image"
-        )
-    ]
+    action = select(
+        "What do you want to do?",
+        choices=["Find details of an image", "Exit"]
+    ).ask()
 
-    answers = prompt(questions)
-    if answers["action"] == "Find details of an image":
-        exif_data = get_exif_data(answers["image_path"])
+    if action == "Find details of an image":
+        image_path = path("Select an image file:", validate=lambda x: os.path.exists(x)).ask()
+        exif_data = get_exif_data(image_path)
         gps_info = get_gps_info(exif_data)
         location = get_location(gps_info)
         print_details(exif_data, gps_info, location)
