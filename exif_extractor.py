@@ -97,7 +97,7 @@ def main():
     if action == "Find details of an image":
         image_path = path(
             "Select an image file:",
-            path_type="file",
+            file_filter=lambda x: x.endswith(('.jpg', '.jpeg', '.png')),
             validate=lambda x: os.path.exists(x)
         ).ask()
         exif_data = get_exif_data(image_path)
