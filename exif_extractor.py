@@ -8,11 +8,11 @@ from colorama import Fore, Style, init
 # Initialize colorama
 init(autoreset=True)
 
-# Clear screen function
+# Clear terminal screen
 def clear_screen():
     os.system("clear")
 
-# Colored ASCII Banner
+# Banner (UNCHANGED – same UI)
 BANNER = f"""
 {Fore.GREEN}
  _______      ___    ___ ___  ________                     
@@ -26,30 +26,30 @@ BANNER = f"""
 {Fore.YELLOW}
    EXIF IMAGE METADATA & GPS EXTRACTOR
 {Style.DIM}
-   Built for Kali Linux | Educational Purpose Only
+   Kali Linux Tool | Educational Purpose Only
 """
 
 def get_exif_data(image_path):
     try:
         img = Image.open(image_path)
-        exif_data = img._getexif()
-        if not exif_data:
-            return {"error": "No EXIF data found."}
+        exif_raw = img._getexif()
+        if not exif_raw:
+            return {}
 
         exif = {}
-        for tag, value in exif_data.items():
+        for tag, value in exif_raw.items():
             tag_name = TAGS.get(tag, tag)
             exif[tag_name] = value
         return exif
     except Exception as e:
-        return {"error": str(e)}
+        return {"Error": str(e)}
 
 def get_gps_info(exif_data):
     gps_info = {}
     if "GPSInfo" in exif_data:
-        for key in exif_data["GPSInfo"].keys():
+        for key, value in exif_data["GPSInfo"].items():
             gps_tag = GPSTAGS.get(key, key)
-            gps_info[gps_tag] = exif_data["GPSInfo"][key]
+            gps_info[gps_tag] = value
         return gps_info
     return None
 
@@ -76,24 +76,41 @@ def get_location(gps_info):
         return {"latitude": lat_deg, "longitude": lon_deg}
     return None
 
+def print_if_exists(label, value):
+    if value:
+        print(Fore.GREEN + f"{label:<20}: {value}")
+
 def print_details(exif_data, gps_info, location):
-    print(Fore.CYAN + "\n━━━━━━━━━━ IMAGE DETAILS ━━━━━━━━━━\n")
+    print(Fore.CYAN + "\n━━━━━━━━━━ IMAGE METADATA ━━━━━━━━━━\n")
 
-    if "Make" in exif_data:
-        print(Fore.GREEN + f"📷 Camera Brand  : {exif_data['Make']}")
-    if "Model" in exif_data:
-        print(Fore.GREEN + f"📸 Camera Model  : {exif_data['Model']}")
-    if "DateTime" in exif_data:
-        print(Fore.GREEN + f"🕒 Date Taken    : {exif_data['DateTime']}")
+    # Camera info
+    print_if_exists("Brand", exif_data.get("Make"))
+    print_if_exists("Device Model", exif_data.get("Model"))
+    print_if_exists("Lens Model", exif_data.get("LensModel"))
 
+    # Camera settings
+    print_if_exists("Aperture (FNumber)", exif_data.get("FNumber"))
+    print_if_exists("Focal Length", exif_data.get("FocalLength"))
+    print_if_exists("Exposure Time", exif_data.get("ExposureTime"))
+    print_if_exists("ISO", exif_data.get("ISOSpeedRatings"))
+    print_if_exists("Flash", exif_data.get("Flash"))
+
+    # Time info
+    print_if_exists("Date Taken", exif_data.get("DateTimeOriginal"))
+    print_if_exists("Date Modified", exif_data.get("DateTime"))
+
+    # Software / Editing trace
+    print_if_exists("Software", exif_data.get("Software"))
+
+    # GPS info
     if location:
-        print(Fore.YELLOW + f"\n📍 Location Found")
-        print(Fore.YELLOW + f"Latitude  : {location['latitude']}")
-        print(Fore.YELLOW + f"Longitude : {location['longitude']}")
-        print(Fore.BLUE + f"\n🌐 Google Maps:")
+        print(Fore.YELLOW + "\n📍 GPS LOCATION FOUND")
+        print(Fore.YELLOW + f"Latitude           : {location['latitude']}")
+        print(Fore.YELLOW + f"Longitude          : {location['longitude']}")
+        print(Fore.BLUE + "\n🌍 Google Maps Link:")
         print(Fore.BLUE + f"https://www.google.com/maps?q={location['latitude']},{location['longitude']}")
     else:
-        print(Fore.RED + "\n❌ Location: Not found in EXIF data.")
+        print(Fore.RED + "\n❌ GPS Location: Not available")
 
     print(Fore.CYAN + "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
 
@@ -104,15 +121,15 @@ def main():
     action = select(
         "Select an option:",
         choices=[
-            "📂 Find details of an image",
+            "📂 Extract image EXIF details",
             "❌ Exit"
         ]
     ).ask()
 
-    if action == "📂 Find details of an image":
+    if action == "📂 Extract image EXIF details":
         image_path = path(
             "Select an image file:",
-            file_filter=lambda x: x.lower().endswith(('.jpg', '.jpeg', '.png')),
+            file_filter=lambda x: x.lower().endswith((".jpg", ".jpeg", ".png")),
             validate=lambda x: os.path.exists(x)
         ).ask()
 
