@@ -3,26 +3,30 @@ import os
 from PIL import Image
 from PIL.ExifTags import TAGS, GPSTAGS
 from questionary import select, path
+from colorama import Fore, Style, init
 
-# ASCII Banner (Fixed)
-BANNER = r"""
- _______      ___    ___ ___  ________                                                              ||
-|\  ___ \    |\  \  /  /|\  \|\  _____\                                                             ||
-\ \   __/|   \ \  \/  / | \  \ \  \__/                                                              ||
- \ \  \_|/__  \ \    / / \ \  \ \   __\                                                             ||
-  \ \  \_|\ \  /     \/   \ \  \ \  \_|                                                             ||
-   \ \_______\/  /\   \    \ \__\ \__\                                                              ||
-    \|_______/__/ /\ __\    \|__|\|__|                                                              ||
-             |__|/ \|__|                                                                            ||
-                                                                                                    ||
- _______      ___    ___ _________  ________  ________  ________ _________  ________  ________      ||
-|\  ___ \    |\  \  /  /|\___   ___\\   __  \|\   __  \|\   ____\\___   ___\\   __  \|\   __  \     ||
-\ \   __/|   \ \  \/  / ||___ \  \_\ \  \|\  \ \  \|\  \ \  \___\|___ \  \_\ \  \|\  \ \  \|\  \    ||
- \ \  \_|/__  \ \    / /     \ \  \ \ \   _  _\ \   __  \ \  \       \ \  \ \ \  \\\  \ \   _  _\   ||
-  \ \  \_|\ \  /     \/       \ \  \ \ \  \\  \\ \  \ \  \ \  \____   \ \  \ \ \  \\\  \ \  \\  \|  ||
-   \ \_______\/  /\   \        \ \__\ \ \__\\ _\\ \__\ \__\ \_______\  \ \__\ \ \_______\ \__\\ _\  ||
-    \|_______/__/ /\ __\        \|__|  \|__|\|__|\|__|\|__|\|_______|   \|__|  \|_______|\|__|\|__|  ||
-             |__|/ \|__|                                                                            ||
+# Initialize colorama
+init(autoreset=True)
+
+# Clear screen function
+def clear_screen():
+    os.system("clear")
+
+# Colored ASCII Banner
+BANNER = f"""
+{Fore.GREEN}
+ _______      ___    ___ ___  ________                     
+|\  ___ \    |\  \  /  /|\  \|\  _____\                    
+\ \   __/|   \ \  \/  / | \  \ \  \__/                     
+ \ \  \_|/__  \ \    / / \ \  \ \   __\                    
+  \ \  \_|\ \  /     \/   \ \  \ \  \_|                    
+   \ \_______\/  /\   \    \ \__\ \__\                     
+    \|_______/__/ /\ __\    \|__|\|__|                     
+             |__|/ \|__|                                   
+{Fore.YELLOW}
+   EXIF IMAGE METADATA & GPS EXTRACTOR
+{Style.DIM}
+   Built for Kali Linux | Educational Purpose Only
 """
 
 def get_exif_data(image_path):
@@ -73,33 +77,45 @@ def get_location(gps_info):
     return None
 
 def print_details(exif_data, gps_info, location):
-    print("\n--- Image Details ---")
+    print(Fore.CYAN + "\n━━━━━━━━━━ IMAGE DETAILS ━━━━━━━━━━\n")
+
     if "Make" in exif_data:
-        print(f"Camera Brand: {exif_data['Make']}")
+        print(Fore.GREEN + f"📷 Camera Brand  : {exif_data['Make']}")
     if "Model" in exif_data:
-        print(f"Camera Model: {exif_data['Model']}")
+        print(Fore.GREEN + f"📸 Camera Model  : {exif_data['Model']}")
     if "DateTime" in exif_data:
-        print(f"Date Taken: {exif_data['DateTime']}")
+        print(Fore.GREEN + f"🕒 Date Taken    : {exif_data['DateTime']}")
+
     if location:
-        print(f"Location (Latitude, Longitude): {location['latitude']}, {location['longitude']}")
-        print(f"Google Maps Link: https://www.google.com/maps?q={location['latitude']},{location['longitude']}")
+        print(Fore.YELLOW + f"\n📍 Location Found")
+        print(Fore.YELLOW + f"Latitude  : {location['latitude']}")
+        print(Fore.YELLOW + f"Longitude : {location['longitude']}")
+        print(Fore.BLUE + f"\n🌐 Google Maps:")
+        print(Fore.BLUE + f"https://www.google.com/maps?q={location['latitude']},{location['longitude']}")
     else:
-        print("Location: Not found in EXIF data.")
-    print("----------------------\n")
+        print(Fore.RED + "\n❌ Location: Not found in EXIF data.")
+
+    print(Fore.CYAN + "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
 
 def main():
+    clear_screen()
     print(BANNER)
+
     action = select(
-        "What do you want to do?",
-        choices=["Find details of an image", "Exit"]
+        "Select an option:",
+        choices=[
+            "📂 Find details of an image",
+            "❌ Exit"
+        ]
     ).ask()
 
-    if action == "Find details of an image":
+    if action == "📂 Find details of an image":
         image_path = path(
             "Select an image file:",
-            file_filter=lambda x: x.endswith(('.jpg', '.jpeg', '.png')),
+            file_filter=lambda x: x.lower().endswith(('.jpg', '.jpeg', '.png')),
             validate=lambda x: os.path.exists(x)
         ).ask()
+
         exif_data = get_exif_data(image_path)
         gps_info = get_gps_info(exif_data)
         location = get_location(gps_info)
